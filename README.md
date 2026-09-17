@@ -32,6 +32,7 @@ agent/
   models.json                Model/provider definitions; environment-based secrets
   extensions/                Custom extensions and subagent display settings
   themes/                    paper-light theme
+  agents/plan-executor.md    Approved-plan implementation role
   skills/pdf-reader/         Owned PDF skill and scripts
   skills/<external>/         Generated links to pinned skill checkouts (ignored)
   external-skills/           Downloaded Git checkouts (ignored)
@@ -60,6 +61,14 @@ External skills are owned by this Pi configuration. Setup links them directly in
 - `@narumitw/pi-btw`: `/btw <question>` opens a temporary side thread using the current model by default. Answers stay outside the main conversation unless explicitly brought back; retained threads are discarded on reload or restart.
 - `pdf-reader`: local PDF extraction, search, rendering, and visual reading.
 - External skills: the selected Matt Pocock engineering/planning skills and Anthropic's frontend-design, pinned in the manifest.
+
+### Approved-plan execution
+
+Use your preferred planning skill on the current parent model, save the plan to a file, then ask: "The plan at `<path>` is approved; have plan-executor implement it." Global `agent/AGENTS.md` routes approved-plan implementation through `pi-subagents`; `agent/agents/plan-executor.md` defines the execution constraints. No extra workflow skill, fixed plan filename, digest, or dedicated log is required.
+
+The executor follows the approved scope, validates each step, and escalates design contradictions to the parent. The parent owns design decisions and final acceptance. Its model is `chrono/gpt-5.6-luna` / `max`, configured under `subagents.agentOverrides.plan-executor` in `agent/settings.json`; ordinary worker and parent defaults are unchanged. These are instruction-based boundaries, not a file-permission sandbox.
+
+Plan Mode blocks saving files and dispatching subagents; switch to Build first. Switching modes does not approve implementation. Start a fresh Pi process after resource changes and inspect `/subagents-models plan-executor`. Live provider support for the thinking level needs a separate smoke check.
 
 ### Plan mode limits
 

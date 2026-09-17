@@ -5,6 +5,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join, resolve, relative } from "node:path";
 import { pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
 
 test("Pi discovers native resources, excludes shared skills, and resolves the default model", async (t) => {
 	const root = process.cwd(), agentDir = resolve("agent");
@@ -47,4 +48,22 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	const models = await ModelRuntime.create({ credentials: AuthStorage.inMemory(), modelsPath: join(agentDir, "models.json"), modelsStorePath: join(home, "models-store.json"), allowModelNetwork: false, refreshOnCreate: false });
 	assert.equal(models.getError(), undefined);
 	assert.ok(models.getModel(settings.defaultProvider, settings.defaultModel));
+	const executor = settings.subagents.agentOverrides["plan-executor"];
+	assert.equal(executor.model, "chrono/gpt-5.6-luna");
+	assert.equal(executor.thinking, "max");
+	assert.ok(models.getModel("chrono", "gpt-5.6-luna"));
+	assert.equal(settings.subagents.agentOverrides.worker, undefined);
+	const require = createRequire(join(core, "../package.json"));
+	const { createJiti } = require("jiti");
+	const jiti = createJiti(import.meta.url);
+	const { discoverAgents } = await jiti.import(join(agentDir, "npm/node_modules/pi-subagents/src/agents/agents.ts"));
+	const agent = discoverAgents(home, "user").agents.find((entry) => entry.name === "plan-executor");
+	assert.ok(agent, "Missing plan-executor agent");
+	assert.equal(agent.model, executor.model);
+	assert.equal(agent.thinking, executor.thinking);
+	assert.equal(agent.defaultContext, "fresh");
+	assert.equal(agent.inheritProjectContext, true);
+	assert.equal(agent.inheritGlobalContext, true);
+	assert.ok(agent.tools.includes("contact_supervisor"));
+	assert.ok(!agent.tools.includes("subagent"));
 });

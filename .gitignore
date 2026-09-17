@@ -23,6 +23,8 @@
 !/agent/
 !/agent/AGENTS.md
 !/agent/settings.json
+!/agent/agents/
+!/agent/agents/plan-executor.md
 !/agent/models.json
 !/agent/extensions/
 !/agent/extensions/ask-user-question.ts

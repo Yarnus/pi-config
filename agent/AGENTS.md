@@ -13,6 +13,14 @@
 - Prefer the simplest approach that satisfies the request, and point out unnecessary complexity.
 - For substantial or risky multi-step work, provide a brief plan in the form `1. [Step] -> verify: [check]`.
 
+## Approved-plan execution
+
+- In the parent session, keep planning and design decisions on the current model. Once the user approves a plan and requests implementation, delegate to `plan-executor` through `pi-subagents`.
+- Supply the approved plan's path, repository cwd, assigned scope, and acceptance/check requirements. If the plan exists only in conversation, save it to an agreed file before handoff; no fixed filename or separate log is required.
+- Use the executor's configured model without a per-run override. If it is unavailable, report the blocker rather than silently switching models or implementing in the parent.
+- Keep one writer per working tree. Resolve executor escalations within the approved design; obtain user approval for material plan changes. Inspect the actual diff and validation evidence before accepting completion.
+- These are parent-session routing rules, not instructions for child agents to delegate. Small tasks without an approved-plan handoff can remain in the parent.
+
 ## Implementation
 
 - Make the minimum change required to satisfy the request.
