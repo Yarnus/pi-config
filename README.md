@@ -55,6 +55,8 @@ External skills are owned by this Pi configuration. Setup links them directly in
 - `paper-light/dark`: the custom light theme paired with Pi's built-in dark theme according to terminal appearance.
 - `pi-subagents`: child-agent delegation and background work; `/subagents-doctor` checks the installation. Display options live in `agent/extensions/subagent/config.json`.
 - `pi-web-access`: web search and URL/PDF extraction. Provider-specific settings, keys, and caches remain local. Some providers and video features need additional credentials or tools; see its upstream documentation.
+- `@juicesharp/rpiv-todo`: agent-maintained session task list and live progress panel; `/todos` shows the list. The parent agent owns plan updates; subagent execution status remains with `pi-subagents`.
+- `@narumitw/pi-btw`: `/btw <question>` opens a temporary side thread using the current model by default. Answers stay outside the main conversation unless explicitly brought back; retained threads are discarded on reload or restart.
 - `pdf-reader`: local PDF extraction, search, rendering, and visual reading.
 - External skills: the selected Matt Pocock engineering/planning skills and Anthropic's frontend-design, pinned in the manifest.
 
