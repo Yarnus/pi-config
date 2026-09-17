@@ -1,0 +1,18 @@
+{
+  "theme": "paper-light/dark",
+  "tuiMode": "fullscreen",
+  "editorPaddingX": 2,
+  "terminal": {
+    "showImages": true,
+    "images": "kitty",
+    "imageWidthCells": 120
+  },
+  "packages": [
+    "npm:pi-subagents@0.65.0",
+    "npm:pi-web-access@0.29.0"
+  ],
+  "skills": ["!**/.agents/skills/**"],
+  "defaultProvider": "chrono",
+  "defaultModel": "gpt-6-astra",
+  "lastChangelogVersion": "0.85.1"
+}

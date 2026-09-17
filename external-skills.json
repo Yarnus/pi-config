@@ -1,0 +1,37 @@
+[
+  {
+    "repository": "https://github.com/mattpocock/skills.git",
+    "commit": "84fdeffd12f2ee307994d1eb6feb48173b6e0502",
+    "skills": {
+      "code-review": "skills/engineering/code-review",
+      "codebase-design": "skills/engineering/codebase-design",
+      "diagnosing-bugs": "skills/engineering/diagnosing-bugs",
+      "domain-modeling": "skills/engineering/domain-modeling",
+      "grill-me": "skills/productivity/grill-me",
+      "grill-with-docs": "skills/engineering/grill-with-docs",
+      "implement": "skills/engineering/implement",
+      "improve-codebase-architecture": "skills/engineering/improve-codebase-architecture",
+      "prototype": "skills/engineering/prototype",
+      "research": "skills/engineering/research",
+      "resolving-merge-conflicts": "skills/engineering/resolving-merge-conflicts",
+      "setup-matt-pocock-skills": "skills/engineering/setup-matt-pocock-skills",
+      "tdd": "skills/engineering/tdd",
+      "teach": "skills/productivity/teach",
+      "to-questionnaire": "skills/productivity/to-questionnaire",
+      "to-spec": "skills/engineering/to-spec",
+      "to-tickets": "skills/engineering/to-tickets",
+      "triage": "skills/engineering/triage",
+      "wait-what": "skills/productivity/wait-what",
+      "wayfinder": "skills/engineering/wayfinder",
+      "wizard": "skills/engineering/wizard",
+      "writing-for-agents": "skills/productivity/writing-for-agents"
+    }
+  },
+  {
+    "repository": "https://github.com/anthropics/skills.git",
+    "commit": "34040c9c568585f6929bedeaad110ad08f079624",
+    "skills": {
+      "frontend-design": "skills/frontend-design"
+    }
+  }
+]

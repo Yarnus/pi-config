@@ -1,0 +1,122 @@
+{
+  "providers": {
+    "chrono": {
+      "baseUrl": "https://nyx.chrono-ai.fun/api/v1/proxy/s/chrono-llm-public",
+      "api": "openai-completions",
+      "apiKey": "$CHRONO_KEY",
+      "models": [
+        {
+          "id": "gpt-5.5",
+          "name": "GPT-5.5",
+          "contextWindow": 160000,
+          "reasoning": true,
+          "cost": {
+            "input": 5,
+            "output": 30,
+            "cacheRead": 0.5,
+            "cacheWrite": 0,
+            "tiers": [
+              {
+                "inputTokensAbove": 272000,
+                "input": 10,
+                "output": 45,
+                "cacheRead": 1,
+                "cacheWrite": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "gpt-5.6",
+          "name": "GPT-5.6",
+          "contextWindow": 160000,
+          "reasoning": true
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT-5.6 Sol",
+          "contextWindow": 160000,
+          "reasoning": true,
+          "input": ["text", "image"],
+          "cost": {
+            "input": 4,
+            "output": 20,
+            "cacheRead": 0.4,
+            "cacheWrite": 5,
+            "tiers": [
+              {
+                "inputTokensAbove": 272000,
+                "input": 8,
+                "output": 30,
+                "cacheRead": 0.8,
+                "cacheWrite": 10
+              }
+            ]
+          },
+          "thinkingLevelMap": {
+            "xhigh": "xhigh"
+          }
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT-5.6 Terra",
+          "contextWindow": 160000,
+          "reasoning": true,
+          "cost": {
+            "input": 2,
+            "output": 12,
+            "cacheRead": 0.2,
+            "cacheWrite": 2.5,
+            "tiers": [
+              {
+                "inputTokensAbove": 272000,
+                "input": 4,
+                "output": 18,
+                "cacheRead": 0.4,
+                "cacheWrite": 5
+              }
+            ]
+          }
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "name": "GPT-5.6 Luna",
+          "contextWindow": 160000,
+          "reasoning": true,
+          "cost": {
+            "input": 0.2,
+            "output": 1.2,
+            "cacheRead": 0.02,
+            "cacheWrite": 0.25,
+            "tiers": [
+              {
+                "inputTokensAbove": 272000,
+                "input": 0.4,
+                "output": 1.8,
+                "cacheRead": 0.04,
+                "cacheWrite": 0.5
+              }
+            ]
+          },
+          "thinkingLevelMap": {
+            "max": "max"
+          }
+        },
+        {
+          "id": "gpt-6",
+          "name": "GPT-6",
+          "contextWindow": 160000,
+          "reasoning": true,
+          "input": ["text", "image"]
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT-6 Astra",
+          "contextWindow": 160000,
+          "reasoning": true,
+          "input": ["text", "image"]
+        }
+      ]
+    }
+  }
+}
