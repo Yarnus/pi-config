@@ -19,7 +19,7 @@ type StatusColor =
 type Paint = (color: StatusColor, text: string) => string;
 
 const themeColors = {
-	branch: "muted",
+	branch: "accent",
 	cache: "muted",
 	context: "muted",
 	contextDanger: "error",
@@ -27,9 +27,9 @@ const themeColors = {
 	input: "muted",
 	model: "accent",
 	output: "muted",
-	path: "muted",
+	path: "mdLink",
 	separator: "dim",
-	thinking: "warning",
+	thinking: "mdLink",
 } as const;
 
 interface StatusSnapshot {
@@ -137,11 +137,11 @@ export function renderStatusLines(
 	const location = paint("path", `󰉋 ${formatCwd(snapshot.cwd)}`);
 	const branch = snapshot.branch ? paint("branch", ` ${snapshot.branch}`) : null;
 	const model = join([
-		paint("model", `󰚩 ${snapshot.model}`),
+		paint("model", `● ${snapshot.model}`),
 		snapshot.provider ? paint("separator", snapshot.provider) : null,
 	], " ");
 	const thinking = snapshot.thinkingLevel
-		? paint("thinking", ` ${snapshot.thinkingLevel}`)
+		? paint("thinking", `≋ ${snapshot.thinkingLevel}`)
 		: null;
 
 	const io = `${paint("input", `↑ ${formatTokens(snapshot.totalInput)}`)}  ${paint("output", `↓ ${formatTokens(snapshot.totalOutput)}`)}`;

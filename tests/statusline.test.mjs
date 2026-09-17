@@ -3,7 +3,7 @@ import test from "node:test";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { visibleWidth } from "@earendil-works/pi-tui";
-import { renderStatusLines } from "../agent/extensions/statusline/index.ts";
+import statuslineExtension, { renderStatusLines } from "../agent/extensions/statusline/index.ts";
 
 const snapshot = {
 	cwd: join(homedir(), "code/my-pi"),
@@ -24,14 +24,47 @@ function render(width, overrides = {}) {
 	return renderStatusLines({ ...snapshot, ...overrides }, width);
 }
 
+test("uses cool theme colors for location and keeps metrics subdued", () => {
+	const handlers = new Map();
+	const painted = new Map();
+	let footer;
+	statuslineExtension({
+		on: (event, handler) => handlers.set(event, handler),
+		getThinkingLevel: () => "medium",
+	});
+	handlers.get("session_start")({}, {
+		mode: "tui",
+		cwd: snapshot.cwd,
+		model: { id: snapshot.model, provider: snapshot.provider },
+		sessionManager: { getBranch: () => [] },
+		ui: {
+			setFooter(factory) {
+				footer = factory(
+					{ requestRender() {} },
+					{ fg(color, text) { painted.set(text, color); return text; } },
+					{ getGitBranch: () => "master", onBranchChange: () => () => {} },
+				);
+			},
+		},
+	});
+	footer.render(140);
+	assert.equal(painted.get("󰉋 ~/code/my-pi"), "mdLink");
+	assert.equal(painted.get(" master"), "accent");
+	assert.equal(painted.get("≋ medium"), "mdLink");
+	assert.equal(painted.get("↑ 0"), "muted");
+	assert.equal(painted.get("↓ 0"), "muted");
+	assert.equal(painted.get("  ·  "), "dim");
+	footer.dispose();
+});
+
 test("renders a responsive two-line wide layout", () => {
 	const lines = render(140);
 	assert.equal(lines.length, 2);
 	assert.match(lines[0], /~\/code\/my-pi/);
 	assert.match(lines[0], /󰉋 ~\/code\/my-pi/);
 	assert.match(lines[0], / master/);
-	assert.match(lines[0], /󰚩 gpt-5\.6-sol/);
-	assert.match(lines[0], / medium/);
+	assert.match(lines[0], /● gpt-5\.6-sol/);
+	assert.match(lines[0], /≋ medium/);
 	assert.match(lines[0], /gpt-5\.6-sol chrono/);
 	assert.match(lines[0], /medium$/);
 	assert.match(lines[1], /↑ 12k  ↓ 3\.1k/);
@@ -100,6 +133,6 @@ test("uses neutral metrics with semantic context warnings", () => {
 	assert.match(colors.get("contextWarning"), /75%/);
 	renderStatusLines({ ...snapshot, contextPercent: 95 }, 140, paint);
 	assert.match(colors.get("contextDanger"), /95%/);
-	assert.equal(colors.get("thinking"), " medium");
-	assert.equal(colors.get("model"), "󰚩 gpt-5.6-sol");
+	assert.equal(colors.get("thinking"), "≋ medium");
+	assert.equal(colors.get("model"), "● gpt-5.6-sol");
 });
