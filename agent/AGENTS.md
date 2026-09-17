@@ -15,11 +15,12 @@
 
 ## Approved-plan execution
 
-- In the parent session, keep planning and design decisions on the current model. Once the user approves a plan and requests implementation, delegate to `plan-executor` through `pi-subagents`.
-- Supply the approved plan's path, repository cwd, assigned scope, and acceptance/check requirements. If the plan exists only in conversation, save it to an agreed file before handoff; no fixed filename or separate log is required.
-- Use the executor's configured model without a per-run override. If it is unavailable, report the blocker rather than silently switching models or implementing in the parent.
-- Keep one writer per working tree. Resolve executor escalations within the approved design; obtain user approval for material plan changes. Inspect the actual diff and validation evidence before accepting completion.
-- These are parent-session routing rules, not instructions for child agents to delegate. Small tasks without an approved-plan handoff can remain in the parent.
+- In the parent session, keep planning and design decisions on the current model. After plan approval and a request to implement, implement in the parent by default. Use `plan-executor` through `pi-subagents` only when the user explicitly requests it; follow an explicit request for another executor instead. Planning or plan approval alone does not select an executor or authorize implementation.
+- For a delegated handoff, supply the approved plan's path, repository cwd, assigned scope, key files or symbols, confirmed findings and settled decisions, acceptance criteria, and exact validation commands when known. If the plan exists only in conversation, save it to an agreed file before handoff; no fixed filename or separate log is required.
+- Assign a coherent implementation scope to one executor rather than launching a fresh executor for each tightly related step. Keep one writer per working tree.
+- Use the executor's configured model and thinking level without per-run overrides. If it is unavailable, report the blocker rather than silently switching models or implementing in the parent.
+- Resolve executor escalations within the approved design; obtain user approval for material plan changes. Before accepting completion, inspect the actual diff and validation evidence; supplement missing, stale, suspect, or high-risk evidence rather than routinely repeating the executor's full investigation and checks.
+- These are parent-session routing rules, not instructions for child agents to delegate.
 
 ## Implementation
 
