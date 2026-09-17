@@ -51,6 +51,7 @@ External skills are owned by this Pi configuration. Setup links them directly in
 - `ask-user-question`: interactive single-choice, multi-choice, and free-text questions.
 - `chrono-413-recovery`: omits images from completed turns in Chrono context and normalizes HTTP 413 for Pi's native compact-and-retry recovery. Keep compaction enabled.
 - `notify`: desktop notifications when Pi needs input or finishes; test with `/notify-test` in TUI mode.
+- `plan-mode`: small adaptation of Pi's official plan-mode example. **Tab toggles Plan / Build only when the main editor is exactly empty**; any content (including whitespace) preserves normal Tab completion. `@` and Shift+Tab are unchanged. `/plan` also toggles. Switching is refused while Pi is busy; finish or abort the run, then try again. Plan shows a compact widget (the custom footer hides extension statuses); returning to Build clears it and restores the exact prior active tools. Mode follows session branches across resume/reload/tree navigation; switching to Build does not automatically execute a plan.
 - `statusline`: responsive two-line footer showing model, tokens, context, and Git branch; use a Nerd Font for icons.
 - `paper-light/dark`: the custom light theme paired with Pi's built-in dark theme according to terminal appearance.
 - `pi-subagents`: child-agent delegation and background work; `/subagents-doctor` checks the installation. Display options live in `agent/extensions/subagent/config.json`.
@@ -60,11 +61,19 @@ External skills are owned by this Pi configuration. Setup links them directly in
 - `pdf-reader`: local PDF extraction, search, rendering, and visual reading.
 - External skills: the selected Matt Pocock engineering/planning skills and Anthropic's frontend-design, pinned in the manifest.
 
+### Plan mode limits
+
+Plan mode allows only already-active `read`, `grep`, `find`, `ls`, `bash`, `ask_user_question`, `web_search`, `fetch_content`, and `get_search_content`. Other model tools, including write/edit, subagents, shell helpers, and TODO mutation, are blocked. It adds planning guidance without extracting plans or owning the existing TODO list.
+
+Bash accepts a conservative subset of single literal inspection commands: `cat`, `head`, `tail`, `wc`, `ls`, `pwd`, `rg`, `grep`, and `git status` / `git log`. Examples: `head -n 80 README.md`, `rg -n 'pattern' src`, `rg -g '*.ts' pattern .`, `git status --short`, `git log --oneline -10`. Options are restricted; pipes, redirection, substitutions, compound commands, unquoted globs, and user `!` / `!!` execution are blocked. Ripgrep config and Git pager/external-diff/signature helpers are disabled for allowed queries. Use dedicated inspection tools or switch to Build for unsupported commands.
+
+This is a workflow guard, **not a security sandbox**. Trusted tool implementations, executable lookup/shell startup, other extensions and their slash commands, already-running background agents, and network fetch/search may have side effects. Stop background work before planning when necessary; Plan cannot revoke work already launched.
+
 When adding custom models, set `contextWindow` explicitly: `272000` when supported, or `160000` for Chrono. This is a configuration convention, not an override of built-in model windows.
 
 ## Validation
 
-After edits, run `./setup-pi.sh`, `./setup-pi.sh --check`, and `npm test`. Tests use synthetic inputs and make no model requests. In a fresh interactive Pi session, verify the question UI, footer/theme, `/notify-test`, and `/subagents-doctor`. Provider and web requests require separate live checks.
+After edits, run `./setup-pi.sh`, `./setup-pi.sh --check`, and `npm test`. Tests use synthetic inputs and make no model requests. In a fresh interactive Pi session, verify the question UI, footer/theme, `/notify-test`, and `/subagents-doctor`. Check Plan with empty-input Tab, nonempty path completion (including whitespace), unchanged `@` / Shift+Tab, the Plan widget, busy-run refusal, and `/plan` fallback. Provider and web requests require separate live checks.
 
 ## Migration
 

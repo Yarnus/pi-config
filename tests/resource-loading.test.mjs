@@ -26,13 +26,13 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	const { extensions, errors } = loader.getExtensions();
 	assert.deepEqual(errors, []);
 	const paths = extensions.map((extension) => relative(agentDir, extension.path));
-	for (const path of ["extensions/ask-user-question.ts", "extensions/chrono-413-recovery.ts", "extensions/notify.ts", "extensions/statusline/index.ts", "npm/node_modules/pi-subagents/index.ts", "npm/node_modules/pi-web-access/index.ts", "npm/node_modules/@juicesharp/rpiv-todo/index.ts", "npm/node_modules/@narumitw/pi-btw/dist/index.ts"]) {
+	for (const path of ["extensions/ask-user-question.ts", "extensions/chrono-413-recovery.ts", "extensions/plan-mode.ts", "extensions/notify.ts", "extensions/statusline/index.ts", "npm/node_modules/pi-subagents/index.ts", "npm/node_modules/pi-web-access/index.ts", "npm/node_modules/@juicesharp/rpiv-todo/index.ts", "npm/node_modules/@narumitw/pi-btw/dist/index.ts"]) {
 		assert.ok(paths.includes(path), `Missing extension: ${path}; loaded ${paths}`);
 	}
 	assert.ok(paths.every((path) => !/plan-todo|prompt-snippets|pi-plan-mode|pi-todo|pi-thinking-steps|packages\/my-pi/.test(path)));
 	const tools = extensions.flatMap((extension) => [...extension.tools.keys()]);
 	for (const name of ["ask_user_question", "web_search", "fetch_content", "todo"]) assert.ok(tools.includes(name), `Missing tool: ${name}`);
-	for (const name of ["subagents-doctor", "todos", "btw"]) assert.ok(extensions.some((extension) => extension.commands.has(name)), `Missing command: ${name}`);
+	for (const name of ["subagents-doctor", "todos", "btw", "plan"]) assert.ok(extensions.some((extension) => extension.commands.has(name)), `Missing command: ${name}`);
 	assert.equal(new Set(tools).size, tools.length, "Duplicate tool registrations");
 	const { skills, diagnostics } = loader.getSkills();
 	assert.deepEqual(diagnostics.filter((entry) => entry.type === "collision"), []);
