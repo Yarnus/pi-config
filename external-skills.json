@@ -1,7 +1,6 @@
 [
   {
     "repository": "https://github.com/mattpocock/skills.git",
-    "commit": "84fdeffd12f2ee307994d1eb6feb48173b6e0502",
     "skills": {
       "code-review": "skills/engineering/code-review",
       "codebase-design": "skills/engineering/codebase-design",
@@ -29,14 +28,12 @@
   },
   {
     "repository": "https://github.com/anthropics/skills.git",
-    "commit": "34040c9c568585f6929bedeaad110ad08f079624",
     "skills": {
       "frontend-design": "skills/frontend-design"
     }
   },
   {
     "repository": "https://github.com/igmarin/elixir-phoenix-skills.git",
-    "commit": "d523d66ac8bb4fc35f9789c16f66f80e22f46943",
     "skills": {
       "elixir-essentials": "skills/elixir-essentials",
       "otp-essentials": "skills/otp-essentials",

@@ -17,7 +17,7 @@ function fixture(t) {
 	writeFileSync(join(agent, "skills/pdf-reader/requirements.txt"), "pymupdf==1.27.1\n");
 	writeFileSync(join(repo, "package.json"), JSON.stringify({ piSetup: { version: "0.85.1" } }));
 	writeFileSync(join(repo, "mise.toml"), `[tools]\nnode = "${process.versions.node}"\n`);
-	writeFileSync(join(repo, "external-skills.json"), JSON.stringify([{ repository: "https://github.com/example/skills.git", commit: "a".repeat(40), skills: { "example-skill": "example-skill" } }]));
+	writeFileSync(join(repo, "external-skills.json"), JSON.stringify([{ repository: "https://github.com/example/skills.git", skills: { "example-skill": "example-skill" } }]));
 	symlinkSync(process.execPath, join(bin, "node"));
 	const fake = `#!${process.execPath}
 import fs from 'node:fs';
@@ -50,7 +50,8 @@ else if (bin === 'python3' && args[1] === 'venv') {
 } else if (bin === 'git' && args.includes('rev-parse')) console.log('a'.repeat(40));
 else if (bin === 'git' && args.includes('status')) {
   if (fs.readFileSync(path.join(args[1], 'example-skill/SKILL.md'), 'utf8') !== 'Example skill') console.log(' M example-skill/SKILL.md');
-} else if (bin === 'git' && args.includes('checkout')) {}
+} else if (bin === 'git' && args.includes('remote.origin.url')) console.log('https://github.com/example/skills.git');
+else if (bin === 'git' && (args.includes('fetch') || args.includes('merge'))) {}
 else if (!(bin === 'python' || (bin === 'python3' && args[0] === '-c'))) throw new Error('Unexpected command: ' + bin + ' ' + args);
 `;
 	for (const name of ["npm", "python3", "git"]) writeFileSync(join(bin, name), fake, { mode: 0o755 });
@@ -62,6 +63,82 @@ else if (!(bin === 'python' || (bin === 'python3' && args[0] === '-c'))) throw n
 	const env = { ...process.env, HOME: home, PI_CODING_AGENT_DIR: agent, PATH: `${bin}:/usr/bin:/bin` };
 	return { home, agent, repo, env, run: (...args) => spawnSync("/bin/sh", [join(repo, "setup-pi.sh"), ...args], { env, encoding: "utf8" }) };
 }
+function realGitFixture(t, branch) {
+	const fixtureData = fixture(t), { home, env } = fixtureData;
+	const git = spawnSync("/bin/sh", ["-c", "command -v git"], { encoding: "utf8" }).stdout.trim();
+	const remote = join(home, "remote");
+	const gitEnv = { ...env, GIT_CONFIG_GLOBAL: join(home, "gitconfig"), GIT_CONFIG_NOSYSTEM: "1" };
+	function runGit(cwd, ...args) {
+		const result = spawnSync(git, ["-C", cwd, ...args], { env: gitEnv, encoding: "utf8" });
+		assert.equal(result.status, 0, result.stderr);
+		return result.stdout.trim();
+	}
+	mkdirSync(remote);
+	runGit(remote, "init", "-b", branch);
+	runGit(remote, "config", "user.name", "Test");
+	runGit(remote, "config", "user.email", "test@example.com");
+	mkdirSync(join(remote, "example-skill"));
+	function publish(content) {
+		writeFileSync(join(remote, "example-skill/SKILL.md"), content);
+		runGit(remote, "add", "."); runGit(remote, "commit", "-m", content);
+	}
+	publish("Initial");
+	writeFileSync(gitEnv.GIT_CONFIG_GLOBAL, `[url "${remote}"]\n\tinsteadOf = https://github.com/example/skills.git\n`);
+	// Use real Git while retaining fake package/Python installers.
+	writeFileSync(join(home, "bin/git"), `#!/bin/sh\nexec "${git}" "$@"\n`, { mode: 0o755 });
+	Object.assign(env, gitEnv);
+	return { ...fixtureData, remote, runGit, publish };
+}
+
+for (const branch of ["main", "master", "trunk"]) {
+	test(`setup follows remote HEAD (${branch}) and default-branch changes`, (t) => {
+		const { home, agent, run, remote, runGit, publish } = realGitFixture(t, branch);
+		const installed = run(); assert.equal(installed.status, 0, installed.stderr);
+		const skill = join(agent, "skills/example-skill/SKILL.md");
+		assert.equal(readFileSync(skill, "utf8"), "Initial");
+		runGit(remote, "checkout", "-b", "new-default"); publish("Updated");
+		const before = snapshot(home);
+		assert.equal(run("--check").status, 0);
+		assert.deepEqual(snapshot(home), before);
+		const updated = run(); assert.equal(updated.status, 0, updated.stderr);
+		assert.equal(readFileSync(skill, "utf8"), "Updated");
+		writeFileSync(skill, "Local edit"); publish("Later");
+		assert.notEqual(run().status, 0);
+		assert.equal(readFileSync(skill, "utf8"), "Local edit");
+	});
+}
+
+for (const diverged of [false, true]) {
+	test(`setup preserves local commits (${diverged ? "diverged" : "ahead"})`, (t) => {
+		const { agent, run, runGit, publish } = realGitFixture(t, "main");
+		const installed = run(); assert.equal(installed.status, 0, installed.stderr);
+		const checkout = join(agent, "external-skills/example/skills");
+		runGit(checkout, "config", "user.name", "Test");
+		runGit(checkout, "config", "user.email", "test@example.com");
+		writeFileSync(join(checkout, "local.txt"), "Local commit");
+		runGit(checkout, "add", "."); runGit(checkout, "commit", "-m", "Local commit");
+		const head = runGit(checkout, "rev-parse", "HEAD");
+		if (diverged) publish("Upstream commit");
+		const result = run(); assert.notEqual(result.status, 0);
+		assert.equal(runGit(checkout, "rev-parse", "HEAD"), head);
+		assert.equal(readFileSync(join(checkout, "local.txt"), "utf8"), "Local commit");
+	});
+}
+
+test("setup migrates clean commit-based links and preserves old checkouts", (t) => {
+	const { agent, run } = fixture(t);
+	const old = join(agent, "external-skills", "a".repeat(40), "example-skill");
+	mkdirSync(old, { recursive: true });
+	writeFileSync(join(old, "SKILL.md"), "Local edit");
+	symlinkSync(`../external-skills/${"a".repeat(40)}/example-skill`, join(agent, "skills/example-skill"));
+	assert.notEqual(run().status, 0);
+	assert.match(readlinkSync(join(agent, "skills/example-skill")), /a{40}/);
+	writeFileSync(join(old, "SKILL.md"), "Example skill");
+	const result = run(); assert.equal(result.status, 0, result.stderr);
+	assert.equal(readlinkSync(join(agent, "skills/example-skill")), "../external-skills/example/skills/example-skill");
+	assert.equal(readFileSync(join(old, "SKILL.md"), "utf8"), "Example skill");
+});
+
 function snapshot(dir) {
 	return readdirSync(dir).sort().map((name) => {
 		const path = join(dir, name), stat = lstatSync(path);
@@ -148,7 +225,7 @@ test("unknown arguments and skill traversal are rejected before mutations", (t) 
 	const before = snapshot(home);
 	assert.notEqual(run("--typo").status, 0);
 	assert.deepEqual(snapshot(home), before);
-	writeFileSync(join(repo, "external-skills.json"), JSON.stringify([{ repository: "https://github.com/example/skills.git", commit: "a".repeat(40), skills: { example: "../escape" } }]));
+	writeFileSync(join(repo, "external-skills.json"), JSON.stringify([{ repository: "https://github.com/example/skills.git", skills: { example: "../escape" } }]));
 	const invalid = snapshot(home), result = run();
 	assert.notEqual(result.status, 0);
 	assert.match(result.stderr, /Invalid\/duplicate skill/);

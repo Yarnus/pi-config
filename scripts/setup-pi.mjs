@@ -22,10 +22,14 @@ function packageInfo(source) {
 	if (match) return { source, name: match[1], path: join(agent, "npm/node_modules", match[1]), version: match[2] };
 	throw new Error(`Unsupported or unpinned package: ${source}`);
 }
-function revisionProblem(path, commit) {
+function checkoutPath(source) {
+	return join(agent, "external-skills", new URL(source.repository).pathname.slice(1, -4));
+}
+function checkoutProblem(path, repository) {
 	if (!stat(path)) return `MISSING ${path}`;
 	try {
-		if (command("git", ["-C", path, "rev-parse", "HEAD"]) !== commit) return `DRIFT revision ${path}`;
+		if (command("git", ["-C", path, "config", "--get", "remote.origin.url"]) !== repository) return `DRIFT repository ${path}`;
+		command("git", ["-C", path, "rev-parse", "--verify", "HEAD"]);
 		if (command("git", ["-C", path, "status", "--porcelain", "--untracked-files=normal"])) return `DRIFT modified checkout ${path}`;
 	} catch { return `DRIFT invalid checkout ${path}`; }
 }
@@ -57,14 +61,22 @@ try {
 	const settings = JSON.parse(settingsText);
 	const packages = settings.packages.map((entry) => packageInfo(typeof entry === "string" ? entry : entry.source));
 	const sources = json(join(root, "external-skills.json"));
-	const skillNames = new Set();
+	const skillNames = new Set(), legacyLinks = new Set();
 	for (const source of sources) {
-		if (!/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\.git$/.test(source.repository) || !/^[a-f0-9]{40}$/.test(source.commit)) throw new Error("External skills require a GitHub source and immutable commit");
+		if (!/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\.git$/.test(source.repository)) throw new Error("External skills require a GitHub source");
 		for (const [name, path] of Object.entries(source.skills)) {
 			if (!/^[\w-]+$/.test(name) || !/^[\w./-]+$/.test(path) || path.startsWith("/") || path.split("/").includes("..") || skillNames.has(name)) throw new Error(`Invalid/duplicate skill: ${name}`);
 			skillNames.add(name);
-			const destination = join(agent, "skills", name), target = join(agent, "external-skills", source.commit, path);
-			if (stat(destination) && !linked(destination, target)) throw new Error(`Conflicting skill path: ${destination}; preserved`);
+			const destination = join(agent, "skills", name), target = join(checkoutPath(source), path);
+			if (stat(destination) && !linked(destination, target)) {
+				const oldTarget = stat(destination).isSymbolicLink() ? resolve(dirname(destination), fs.readlinkSync(destination)) : "";
+				const oldRelative = relativePath(join(agent, "external-skills"), oldTarget);
+				const commit = oldRelative.split("/")[0];
+				if (!/^[a-f0-9]{40}$/.test(commit) || oldRelative !== `${commit}/${path}`) throw new Error(`Conflicting skill path: ${destination}; preserved`);
+				const problem = checkoutProblem(join(agent, "external-skills", commit), source.repository);
+				if (problem) throw new Error(problem);
+				legacyLinks.add(destination);
+			}
 		}
 	}
 	const nodeVersion = /^node\s*=\s*"([\d.]+)"\s*$/m.exec(fs.readFileSync(join(root, "mise.toml"), "utf8"))?.[1];
@@ -116,21 +128,29 @@ try {
 	catch { report("MISSING/DRIFT PDF Python environment; run setup"); }
 	for (const pkg of packages) { const problem = packageProblem(pkg); if (problem) report(problem); }
 	for (const source of sources) {
-		const checkout = join(agent, "external-skills", source.commit);
+		const checkout = checkoutPath(source);
 		if (!check && !stat(checkout)) {
 			fs.mkdirSync(dirname(checkout), { recursive: true });
 			const temporary = fs.mkdtempSync(join(dirname(checkout), ".install-"));
 			try {
-				command("git", ["clone", "--no-checkout", source.repository, temporary], { stdio: "inherit" });
-				command("git", ["-C", temporary, "checkout", "--detach", source.commit], { stdio: "inherit" });
+				command("git", ["clone", source.repository, temporary], { stdio: "inherit" });
 				fs.renameSync(temporary, checkout);
 			} finally { fs.rmSync(temporary, { recursive: true, force: true }); }
 		}
-		const problem = revisionProblem(checkout, source.commit);
+		const problem = checkoutProblem(checkout, source.repository);
 		if (problem) { report(problem); continue; }
+		if (!check) {
+			// FETCH_HEAD resolves the remote's current default branch, including renames.
+			command("git", ["-C", checkout, "fetch", "origin", "HEAD"], { stdio: "inherit" });
+			command("git", ["-C", checkout, "merge", "--ff-only", "FETCH_HEAD"], { stdio: "inherit" });
+			if (command("git", ["-C", checkout, "rev-parse", "HEAD"]) !== command("git", ["-C", checkout, "rev-parse", "FETCH_HEAD"])) {
+				report(`DRIFT local commits ${checkout}; preserved`); continue;
+			}
+		}
 		for (const [name, relative] of Object.entries(source.skills)) {
 			const target = join(checkout, relative), path = join(agent, "skills", name);
 			if (!fs.existsSync(join(target, "SKILL.md"))) { report(`MISSING source skill ${target}`); continue; }
+			if (!check && legacyLinks.has(path)) fs.unlinkSync(path);
 			if (!check && !stat(path)) { fs.mkdirSync(dirname(path), { recursive: true }); fs.symlinkSync(relativePath(dirname(path), target), path); }
 			if (!linked(path, target)) report(`MISSING skill link ${path}; run setup`);
 		}

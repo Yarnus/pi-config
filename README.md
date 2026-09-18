@@ -21,7 +21,7 @@ Setup installs the pinned Pi version when missing, Node development dependencies
 
 Provide `CHRONO_KEY` through your shell environment or secret manager. For providers supporting interactive authentication, use `/login`. Credentials and session history are local runtime data, not part of installation or Git.
 
-`--check` performs no installations or file changes. It checks versions, direct Node dependencies, PDF dependencies, Pi packages, and the pinned external skill checkouts and discovery links. It does not verify credentials, network services, or terminal appearance. Start a fresh Pi process after resource changes.
+`--check` performs no installations or file changes. It checks versions, direct Node dependencies, PDF dependencies, Pi packages, and external skill checkout origins, cleanliness, and discovery links (offline, without checking remote freshness). It does not verify credentials, network services, or terminal appearance. Start a fresh Pi process after resource changes.
 
 ## Layout and ownership
 
@@ -34,18 +34,18 @@ agent/
   themes/                    paper-light and paper-dark themes
   agents/plan-executor.md    Approved-plan implementation role
   skills/pdf-reader/         Owned PDF skill and scripts
-  skills/<external>/         Generated links to pinned skill checkouts (ignored)
+  skills/<external>/         Generated links to default-branch skill checkouts (ignored)
   external-skills/           Downloaded Git checkouts (ignored)
 scripts/setup-pi.mjs          Installation and read-only validation
 tests/                       Extension, PDF, setup, and resource-loading checks
-external-skills.json          External repositories, immutable commits, skill paths
+external-skills.json          External repositories and skill paths
 ```
 
 `.gitignore` ignores everything except explicitly listed portable files. Auth, sessions, caches, npm/git install stores, external checkouts, machine integrations, and Python/Node environments remain local. Add new owned files to the allowlist deliberately. The root `AGENTS.md` governs repository maintenance; `agent/AGENTS.md` supplies instructions to Pi in every project.
 
-Versions live in `mise.toml` (Node), `package.json` (`piSetup.version` and development dependencies), `package-lock.json`, `agent/settings.json` (Pi packages), `agent/skills/pdf-reader/requirements.txt`, and `external-skills.json`. Pi supplies extension peer imports at runtime; matching development dependencies support standalone tests. `.npmrc` omits automatic peer installation.
+Versions live in `mise.toml` (Node), `package.json` (`piSetup.version` and development dependencies), `package-lock.json`, `agent/settings.json` (Pi packages), and `agent/skills/pdf-reader/requirements.txt`. Pi supplies extension peer imports at runtime; matching development dependencies support standalone tests. `.npmrc` omits automatic peer installation.
 
-External skills are owned by this Pi configuration. Setup links them directly into `agent/skills` from `agent/external-skills`, without writing to `~/.agents/skills`. The global skills exclusion in settings prevents Pi's automatic discovery of that shared directory from reintroducing removed or duplicate skills. Project-local skill discovery remains available.
+External skills are owned by this Pi configuration. Every setup run fetches each repository's remote `HEAD` and fast-forwards to its default branch, without assuming `main` or `master`. Modified checkouts, local commits, and diverged histories are preserved and reported instead of reset. Checkouts live under `agent/external-skills/<owner>/<repo>`; clean legacy commit-based links are migrated while old checkouts are retained. Setup links them directly into `agent/skills` from `agent/external-skills`, without writing to `~/.agents/skills`. The global skills exclusion in settings prevents Pi's automatic discovery of that shared directory from reintroducing removed or duplicate skills. Project-local skill discovery remains available.
 
 ## Resources
 
@@ -61,7 +61,7 @@ External skills are owned by this Pi configuration. Setup links them directly in
 - `@juicesharp/rpiv-todo`: agent-maintained session task list and live progress panel; `/todos` shows the list. The parent agent owns plan updates; subagent execution status remains with `pi-subagents`.
 - `@narumitw/pi-btw`: `/btw <question>` opens a temporary side thread using the current model by default. Answers stay outside the main conversation unless explicitly brought back; retained threads are discarded on reload or restart.
 - `pdf-reader`: local PDF extraction, search, rendering, and visual reading.
-- External skills: the selected Matt Pocock engineering/planning skills and Anthropic's frontend-design, pinned in the manifest.
+- External skills: the selected Matt Pocock engineering/planning skills Anthropic's frontend-design, and Elixir/Phoenix essentials, declared in the manifest and following upstream default branches.
 
 ### Approved-plan execution
 
