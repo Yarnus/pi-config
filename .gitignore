@@ -15,6 +15,7 @@
 !/tests/ask-user-question.test.mjs
 !/tests/chrono-413-recovery.test.mjs
 !/tests/notify.test.mjs
+!/tests/response-time.test.mjs
 !/tests/plan-mode.test.mjs
 !/tests/statusline.test.mjs
 !/tests/python-helpers.test.mjs
@@ -32,6 +33,7 @@
 !/agent/extensions/chrono-413-recovery.ts
 !/agent/extensions/plan-mode.ts
 !/agent/extensions/notify.ts
+!/agent/extensions/response-time.ts
 !/agent/extensions/notify/
 !/agent/extensions/notify/support.ts
 !/agent/extensions/statusline/

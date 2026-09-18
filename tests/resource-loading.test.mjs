@@ -27,7 +27,7 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	const { extensions, errors } = loader.getExtensions();
 	assert.deepEqual(errors, []);
 	const paths = extensions.map((extension) => relative(agentDir, extension.path));
-	for (const path of ["extensions/ask-user-question.ts", "extensions/chrono-413-recovery.ts", "extensions/plan-mode.ts", "extensions/notify.ts", "extensions/statusline/index.ts", "npm/node_modules/pi-subagents/index.ts", "npm/node_modules/pi-web-access/index.ts", "npm/node_modules/@juicesharp/rpiv-todo/index.ts", "npm/node_modules/@narumitw/pi-btw/dist/index.ts"]) {
+	for (const path of ["extensions/ask-user-question.ts", "extensions/chrono-413-recovery.ts", "extensions/plan-mode.ts", "extensions/notify.ts", "extensions/response-time.ts", "extensions/statusline/index.ts", "npm/node_modules/pi-permissive/extensions/permissions.ts", "npm/node_modules/pi-subagents/index.ts", "npm/node_modules/pi-web-access/index.ts", "npm/node_modules/@juicesharp/rpiv-todo/index.ts", "npm/node_modules/@narumitw/pi-btw/dist/index.ts"]) {
 		assert.ok(paths.includes(path), `Missing extension: ${path}; loaded ${paths}`);
 	}
 	assert.ok(paths.every((path) => !/plan-todo|prompt-snippets|pi-plan-mode|pi-todo|pi-thinking-steps|packages\/my-pi/.test(path)));
