@@ -42,7 +42,10 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	for (const name of ["pdf-reader", ...sources.flatMap((source) => Object.keys(source.skills))]) assert.ok(names.includes(name), `Missing skill: ${name}`);
 	for (const name of ["should-not-load", "find-skills", "analyze-sessions"]) assert.ok(!names.includes(name), `Unexpected skill: ${name}`);
 	assert.ok(skills.every((skill) => !skill.filePath.includes("/.agents/skills/")));
-	assert.ok(loader.getThemes().themes.some((theme) => theme.name === "paper-light"));
+	assert.equal(settings.theme, "paper-light/paper-dark");
+	for (const name of settings.theme.split("/")) {
+		assert.ok(loader.getThemes().themes.some((theme) => theme.name === name), `Missing theme: ${name}`);
+	}
 	const { AuthStorage } = await load("auth-storage");
 	const { ModelRuntime } = await load("model-runtime");
 	const models = await ModelRuntime.create({ credentials: AuthStorage.inMemory(), modelsPath: join(agentDir, "models.json"), modelsStorePath: join(home, "models-store.json"), allowModelNetwork: false, refreshOnCreate: false });

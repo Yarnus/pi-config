@@ -31,7 +31,7 @@ agent/
   settings.json              UI, default model, package pins, discovery exclusions
   models.json                Model/provider definitions; environment-based secrets
   extensions/                Custom extensions and subagent display settings
-  themes/                    paper-light theme
+  themes/                    paper-light and paper-dark themes
   agents/plan-executor.md    Approved-plan implementation role
   skills/pdf-reader/         Owned PDF skill and scripts
   skills/<external>/         Generated links to pinned skill checkouts (ignored)
@@ -54,7 +54,7 @@ External skills are owned by this Pi configuration. Setup links them directly in
 - `notify`: desktop notifications when Pi needs input or finishes; test with `/notify-test` in TUI mode.
 - `plan-mode`: small adaptation of Pi's official plan-mode example. **Tab toggles Plan / Build only when the main editor is exactly empty**; any content (including whitespace) preserves normal Tab completion. `@` and Shift+Tab are unchanged. `/plan` also toggles. Switching is refused while Pi is busy; finish or abort the run, then try again. Plan shows a compact widget (the custom footer hides extension statuses); returning to Build clears it and restores the exact prior active tools. Mode follows session branches across resume/reload/tree navigation; switching to Build does not automatically execute a plan.
 - `statusline`: responsive two-line footer showing model, tokens, context, and Git branch; use a Nerd Font for icons.
-- `paper-light/dark`: the custom light theme paired with Pi's built-in dark theme according to terminal appearance.
+- `paper-light/paper-dark`: custom light/dark themes selected automatically according to terminal appearance. Based on [Kanagawa Paper](https://github.com/thesimonho/kanagawa-paper.nvim/tree/ecf19801a2673054c19421d82b766f7641688320) Canvas / Ink palettes (`colors.lua` and `themes/{canvas,ink}.lua`). Syntax maps to upstream `comment`, `keyword`, `fun`, `parameter`, `string`, `number`, `type`, `operator`, and `punct`; Pi combines variable/parameter styling, so both use the neutral parameter color. Canvas and Ink syntax colors are unchanged from upstream, preserving their intentionally soft contrast rather than enforcing a 4.5:1 syntax contrast target. Canvas footer and diff colors also use the unmodified upstream palette rather than a 4.5:1 contrast target; body text and scrollbar thumbs retain darker foregrounds for legibility. Ink footer colors retain their contrast adjustments. Terminal page backgrounds remain terminal-controlled; matching Canvas/Ink backgrounds are `#e1e1de` / `#1f1f28`.
 - `pi-subagents`: child-agent delegation and background work; `/subagents-doctor` checks the installation. Display options live in `agent/extensions/subagent/config.json`.
 - `pi-web-access`: web search and URL/PDF extraction. Provider-specific settings, keys, and caches remain local. Some providers and video features need additional credentials or tools; see its upstream documentation.
 - `@juicesharp/rpiv-todo`: agent-maintained session task list and live progress panel; `/todos` shows the list. The parent agent owns plan updates; subagent execution status remains with `pi-subagents`.

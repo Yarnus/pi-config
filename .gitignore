@@ -37,6 +37,7 @@
 !/agent/extensions/subagent/config.json
 !/agent/themes/
 !/agent/themes/paper-light.json
+!/agent/themes/paper-dark.json
 !/agent/skills/
 !/agent/skills/pdf-reader/
 !/agent/skills/pdf-reader/SKILL.md

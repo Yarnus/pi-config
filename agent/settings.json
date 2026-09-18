@@ -1,5 +1,5 @@
 {
-  "theme": "paper-light/dark",
+  "theme": "paper-light/paper-dark",
   "tuiMode": "fullscreen",
   "editorPaddingX": 2,
   "terminal": {
