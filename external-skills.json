@@ -31,13 +31,5 @@
     "skills": {
       "frontend-design": "skills/frontend-design"
     }
-  },
-  {
-    "repository": "https://github.com/igmarin/elixir-phoenix-skills.git",
-    "skills": {
-      "elixir-essentials": "skills/elixir-essentials",
-      "otp-essentials": "skills/otp-essentials",
-      "testing-essentials": "skills/testing-essentials"
-    }
   }
 ]

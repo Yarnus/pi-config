@@ -12,7 +12,8 @@
     "npm:pi-web-access@0.29.0",
     "npm:@juicesharp/rpiv-todo@2.10.1",
     "npm:@narumitw/pi-btw@0.59.0",
-    "npm:pi-permissive@0.3.3"
+    "npm:pi-permissive@0.3.3",
+    "npm:pi-elixir@0.8.5"
   ],
   "skills": ["!**/.agents/skills/**"],
   "subagents": {
