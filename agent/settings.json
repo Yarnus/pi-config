@@ -15,20 +15,29 @@
     "npm:pi-permissive@0.3.3",
     "npm:pi-elixir@0.8.5"
   ],
-  "skills": ["!**/.agents/skills/**"],
+  "skills": [
+    "!**/.agents/skills/**"
+  ],
   "subagents": {
     "agentOverrides": {
       "scout": {
-        "model": "chrono/gpt-5.6-luna",
+        "model": "openai-codex/gpt-6-luna",
         "thinking": "max"
       },
       "plan-executor": {
-        "model": "chrono/gpt-5.6-luna",
+        "model": "openai-codex/gpt-6-luna",
         "thinking": "max"
       }
     }
   },
-  "defaultProvider": "chrono",
-  "defaultModel": "gpt-6-astra",
-  "lastChangelogVersion": "0.85.1"
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-6-sol",
+  "lastChangelogVersion": "0.87.1",
+  "enabledModels": [
+    "openai-codex/gpt-5.6-luna",
+    "openai-codex/gpt-5.6-sol",
+    "openai-codex/gpt-6-astra",
+    "openai-codex/gpt-6-luna",
+    "openai-codex/gpt-6-sol"
+  ]
 }
