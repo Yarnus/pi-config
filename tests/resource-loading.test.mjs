@@ -1,15 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve, relative } from "node:path";
+import { dirname, join, resolve, relative } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createRequire } from "node:module";
 
 test("Pi discovers native resources, excludes shared skills, and resolves the default model", async (t) => {
-	const root = process.cwd(), agentDir = resolve("agent");
-	const core = join(execFileSync("npm", ["root", "--global"], { encoding: "utf8" }).trim(), "@earendil-works/pi-coding-agent/dist/core");
+	const agentDir = resolve("agent");
+	let piRoot = dirname(realpathSync(execFileSync("/bin/sh", ["-c", "command -v pi"], { encoding: "utf8" }).trim()));
+	while (piRoot !== dirname(piRoot)) {
+		const manifest = join(piRoot, "package.json");
+		if (existsSync(manifest) && JSON.parse(readFileSync(manifest, "utf8")).name === "@earendil-works/pi-coding-agent") break;
+		piRoot = dirname(piRoot);
+	}
+	assert.notEqual(piRoot, dirname(piRoot), "Pi executable must resolve to its npm package");
+	const core = join(piRoot, "dist/core");
 	const home = mkdtempSync(join(tmpdir(), "pi-resources-"));
 	t.after(() => rmSync(home, { recursive: true, force: true }));
 	const shared = join(home, ".agents/skills/should-not-load");
@@ -27,8 +33,14 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	const { extensions, errors } = loader.getExtensions();
 	assert.deepEqual(errors, []);
 	const paths = extensions.map((extension) => relative(agentDir, extension.path));
-	for (const path of ["extensions/ask-user-question.ts", "extensions/chrono-413-recovery.ts", "extensions/plan-mode.ts", "extensions/notify.ts", "extensions/response-time.ts", "extensions/statusline/index.ts", "npm/node_modules/pi-permissive/extensions/permissions.ts", "npm/node_modules/pi-subagents/index.ts", "npm/node_modules/pi-web-access/index.ts", "npm/node_modules/@juicesharp/rpiv-todo/index.ts", "npm/node_modules/@narumitw/pi-btw/dist/index.ts"]) {
+	for (const path of ["extensions/ask-user-question.ts", "extensions/chrono-413-recovery.ts", "extensions/plan-mode.ts", "extensions/notify.ts", "extensions/response-time.ts", "extensions/statusline/index.ts"]) {
 		assert.ok(paths.includes(path), `Missing extension: ${path}; loaded ${paths}`);
+	}
+	for (const source of settings.packages.filter((source) => typeof source === "string" && source.startsWith("npm:"))) {
+		const name = source.slice(4).replace(/@[^/]*$/, "");
+		assert.ok(paths.some((path) => path.startsWith(`npm/node_modules/${name}/`)), `Missing package extension: ${name}; loaded ${paths}`);
+		const installed = JSON.parse(readFileSync(join(agentDir, "npm/node_modules", name, "package.json"), "utf8"));
+		assert.equal(source, `npm:${name}@${installed.version}`, `Package must be pinned to its installed version: ${name}`);
 	}
 	assert.ok(paths.every((path) => !/plan-todo|prompt-snippets|pi-plan-mode|pi-todo|pi-thinking-steps|packages\/my-pi/.test(path)));
 	const tools = extensions.flatMap((extension) => [...extension.tools.keys()]);
@@ -38,8 +50,10 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	const { skills, diagnostics } = loader.getSkills();
 	assert.deepEqual(diagnostics.filter((entry) => entry.type === "collision"), []);
 	const names = skills.map((skill) => skill.name);
-	const sources = JSON.parse(readFileSync(join(root, "external-skills.json")));
-	for (const name of ["pdf-reader", ...sources.flatMap((source) => Object.keys(source.skills))]) assert.ok(names.includes(name), `Missing skill: ${name}`);
+	const expectedGitSkills = ["code-review", "codebase-design", "diagnosing-bugs", "domain-modeling", "frontend-design", "grilling", "implement", "improve-codebase-architecture", "prototype", "research", "setup-matt-pocock-skills", "tdd", "teach", "to-questionnaire", "to-spec", "to-tickets", "triage", "wait-what", "wayfinder", "wizard", "writing-for-agents"];
+	assert.ok(names.includes("pdf-reader"));
+	assert.deepEqual(skills.filter((skill) => skill.filePath.startsWith(join(agentDir, "git/"))).map((skill) => skill.name).sort(), expectedGitSkills.sort());
+	for (const name of ["grill-me", "grill-with-docs", "resolving-merge-conflicts"]) assert.ok(!names.includes(name), `Unexpected skill: ${name}`);
 	for (const name of ["should-not-load", "find-skills", "analyze-sessions"]) assert.ok(!names.includes(name), `Unexpected skill: ${name}`);
 	assert.ok(skills.every((skill) => !skill.filePath.includes("/.agents/skills/")));
 	assert.equal(settings.theme, "paper-light/paper-dark");
@@ -52,14 +66,12 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	assert.equal(models.getError(), undefined);
 	assert.ok(models.getModel(settings.defaultProvider, settings.defaultModel));
 	const executor = settings.subagents.agentOverrides["plan-executor"];
-	assert.equal(executor.model, "chrono/gpt-5.6-luna");
+	assert.equal(executor.model, "openai-codex/gpt-6-luna");
 	assert.equal(executor.thinking, "max");
-	assert.ok(models.getModel("chrono", "gpt-5.6-luna"));
+	assert.ok(models.getModel("openai-codex", "gpt-6-luna"));
 	assert.equal(settings.subagents.agentOverrides.worker, undefined);
-	const require = createRequire(join(core, "../package.json"));
-	const { createJiti } = require("jiti");
-	const jiti = createJiti(import.meta.url);
-	const { discoverAgents } = await jiti.import(join(agentDir, "npm/node_modules/pi-subagents/src/agents/agents.ts"));
+	// Agent discovery has no public export; validate it against the pinned package's published module.
+	const { discoverAgents } = await import(pathToFileURL(join(agentDir, "npm/node_modules/pi-subagents/src/agents/agents.js")).href);
 	const agent = discoverAgents(home, "user").agents.find((entry) => entry.name === "plan-executor");
 	assert.ok(agent, "Missing plan-executor agent");
 	assert.equal(agent.model, executor.model);

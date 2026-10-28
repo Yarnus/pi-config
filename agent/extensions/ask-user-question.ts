@@ -324,9 +324,15 @@ async function askSingleChoice(
 		}
 
 		return {
+			get focused() { return editor.focused; },
+			set focused(value: boolean) {
+				editor.focused = value;
+				cachedLines = undefined;
+			},
 			render,
 			invalidate: () => {
 				cachedLines = undefined;
+				editor.invalidate();
 			},
 			handleInput,
 		};
@@ -529,9 +535,15 @@ async function askMultiChoice(
 		}
 
 		return {
+			get focused() { return editor.focused; },
+			set focused(value: boolean) {
+				editor.focused = value;
+				cachedLines = undefined;
+			},
 			render,
 			invalidate: () => {
 				cachedLines = undefined;
+				editor.invalidate();
 			},
 			handleInput,
 		};

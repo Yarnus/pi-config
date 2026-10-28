@@ -4,7 +4,7 @@ This repository lives at `~/.pi`. Edit configuration and custom resources direct
 
 - Keep `.gitignore` as an explicit allowlist. Add only portable configuration, source, documentation, and tests. Credentials, sessions, downloaded packages, external skill checkouts, and generated environments stay untracked.
 - `agent/AGENTS.md` contains global Pi instructions; this file describes repository maintenance.
-- `setup-pi.sh` installs pinned dependencies and updates external skills to each repository's remote default branch. `setup-pi.sh --check` validates without changing files. Neither links configuration to another repository nor manages `~/.agents/skills`.
-- External skill repositories and paths are declared in `external-skills.json`; commits and branch names are not pinned. Preserve modified checkouts and local commits; resolve drift before rerunning setup.
-- After changing configuration, resources, or dependencies, run `./setup-pi.sh`, `./setup-pi.sh --check`, and `npm test`. Review `git status --short --untracked-files=all` before staging.
+- Pi is installed independently. This repository supplies owned resources from `agent/`; `pi update --extensions` fetches the declared Git skills, while Pi installs missing pinned npm packages at startup.
+- Third-party skills are selected with Git package filters in `agent/settings.json`; Pi stores checkouts outside Git. The PDF skill creates its ignored Python environment on first use.
+- After changing resources or dependencies, run `npm ci --omit=peer` and `npm test` when applicable. Review `git status --short --untracked-files=all` before staging.
 - Use a fresh Pi process to verify runtime changes. Automated tests do not establish terminal appearance or live provider connectivity.

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import ask from "../agent/extensions/ask-user-question.ts";
+import { CURSOR_MARKER } from "@earendil-works/pi-tui";
 
 let tool;
 ask({ registerTool: (value) => { tool = value; } });
@@ -31,6 +32,32 @@ test("ask-user-question leaves headless unavailable and abort cancelled", async 
 	const ctx = { mode: "print", hasUI: false };
 	assert.equal((await execute({}, ctx)).details.status, "unavailable");
 	assert.equal((await execute({}, ctx, AbortSignal.abort())).details.status, "cancelled");
+});
+
+test("ask-user-question forwards focus to the Other editor in both choice modes", async () => {
+	for (const multiSelect of [false, true]) {
+		let component;
+		const ctx = { mode: "tui", hasUI: true, ui: { custom: (factory) => new Promise((resolve) => {
+			component = factory({ terminal: { rows: 40, columns: 80 }, requestRender() {} }, { fg: (_color, text) => text }, {}, resolve);
+		}) } };
+		const pending = execute({ options, multiSelect }, ctx);
+		await new Promise((resolve) => setImmediate(resolve));
+		try {
+			component.focused = true;
+			component.handleInput("\x1b[B");
+			component.handleInput("\x1b[B");
+			component.handleInput("\r");
+			assert.ok(component.render(80).some((line) => line.includes(CURSOR_MARKER)), "Focused Other editor must position the IME cursor");
+			component.focused = false;
+			assert.ok(component.render(80).every((line) => !line.includes(CURSOR_MARKER)), "Blur must invalidate cached cursor markers");
+			component.focused = true;
+			assert.ok(component.render(40).some((line) => line.includes(CURSOR_MARKER)));
+		} finally {
+			component.handleInput("\x1b");
+			component.handleInput("\x1b");
+			await pending;
+		}
+	}
 });
 
 test("ask-user-question TUI choice keyboard paths select, submit, and cancel", async () => {

@@ -1,90 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import net from "node:net";
 import notifyExtension from "../agent/extensions/notify.ts";
-import { shortText, contentText, selectHerdrTty, messagePreview, taskTitle } from "../agent/extensions/notify/support.ts";
+import { shortText, contentText } from "../agent/extensions/notify/support.ts";
 
-delete process.env.HERDR_ENV;
-
-test("summaries exclude thinking blocks and control characters and preserve Unicode", () => {
-	assert.equal(shortText("<thinking>private</thinking>\n**Done** [tests](url)\x1b;"), "Done tests ;");
-	assert.equal(shortText("😀😀😀😀", 3), "😀😀…");
-	assert.equal(contentText([{ type: "thinking", thinking: "private" }, { type: "text", text: "result" }]), "result");
-});
-
-test("titles prefer session names, then message previews, then project names", () => {
-	assert.equal(taskTitle("Manual name", "First request", "/tmp/project"), "Manual name");
-	assert.equal(taskTitle(undefined, "First request", "/tmp/project"), "First request");
-	assert.equal(taskTitle(undefined, "", "/tmp/project"), "project 会话");
-	assert.equal(messagePreview("/var/tmp/pi-clipboard.png 优化通知"), "优化通知");
-	assert.equal(messagePreview("@./image.JPG"), "");
-	assert.equal(messagePreview([{ type: "image", data: "image" }]), "");
-	assert.equal(messagePreview("a".repeat(80)).length, 40);
-});
-
-test("session restore, rename, and tree navigation use session data without model calls", async () => {
-	const socketPath = `/tmp/pi-notify-test-${process.pid}.sock`;
-	const requests = [];
-	const server = net.createServer((socket) => {
-		let buffer = "";
-		socket.on("data", (data) => {
-			buffer += data;
-			if (buffer.includes("\n")) {
-				requests.push(JSON.parse(buffer).params);
-				socket.end('{"result":{}}\n');
-			}
-		});
-	});
-	await new Promise((resolve) => server.listen(socketPath, resolve));
-	const old = { ...process.env };
-	process.env.HERDR_ENV = "1";
-	process.env.HERDR_SOCKET_PATH = socketPath;
-	process.env.HERDR_PANE_ID = "test-pane";
-	try {
-		const handlers = new Map();
-		let name;
-		let branch = [
-			{ type: "custom", customType: "notification-task", data: { title: "Obsolete generated title" } },
-			{ type: "message", message: { role: "user", content: "/tmp/image.png" } },
-			{ type: "message", message: { role: "user", content: "First useful request" } },
-		];
-		notifyExtension({ on: (key, handler) => handlers.set(key, handler), registerCommand() {}, getSessionName: () => name });
-		const ctx = { mode: "tui", cwd: "/tmp/project", isIdle: () => true,
-			sessionManager: { getBranch: () => branch },
-			get modelRegistry() { throw new Error("Must not use model registry"); } };
-		handlers.get("session_start")({}, ctx);
-		handlers.get("before_agent_start")({ prompt: "Later request" }, ctx);
-		name = "Manual name";
-		handlers.get("session_info_changed")({}, ctx);
-		name = undefined;
-		branch = [];
-		handlers.get("session_tree")({}, ctx);
-		handlers.get("before_agent_start")({ prompt: "New first request" }, ctx);
-		ctx.mode = "rpc";
-		handlers.get("before_agent_start")({ prompt: "Ignored" }, ctx);
-		ctx.mode = "tui";
-		await handlers.get("session_shutdown")({}, ctx);
-		assert.deepEqual(requests.map((request) => request.tokens.task), [
-			"First useful request", "First useful request", "Manual name", "project 会话", "New first request", null,
-		]);
-	} finally {
-		for (const key of ["HERDR_ENV", "HERDR_SOCKET_PATH", "HERDR_PANE_ID"]) {
-			if (old[key] === undefined) delete process.env[key]; else process.env[key] = old[key];
-		}
-		await new Promise((resolve) => server.close(resolve));
-	}
-});
-
-test("desktop notifications keep a fixed Pi Agent title and put status in the body", async (t) => {
-	for (const key of ["HERDR_ENV", "WT_SESSION", "KITTY_WINDOW_ID"]) {
+function harness(t, kitty = false) {
+	for (const key of ["WT_SESSION", "KITTY_WINDOW_ID"]) {
 		const value = process.env[key];
 		delete process.env[key];
 		t.after(() => { if (value === undefined) delete process.env[key]; else process.env[key] = value; });
 	}
+	if (kitty) process.env.KITTY_WINDOW_ID = "1";
 	const output = [];
 	const originalWrite = process.stdout.write.bind(process.stdout);
 	t.mock.method(process.stdout, "write", (text, ...args) => {
-		if (typeof text === "string" && text.startsWith("\x1b]777;notify;")) {
+		if (typeof text === "string" && (text.startsWith("\x1b]777;") || text.startsWith("\x1b]99;"))) {
 			output.push(text);
 			return true;
 		}
@@ -93,17 +22,31 @@ test("desktop notifications keep a fixed Pi Agent title and put status in the bo
 	const handlers = new Map();
 	const commands = new Map();
 	notifyExtension({ on: (key, handler) => handlers.set(key, handler),
-		registerCommand: (key, command) => commands.set(key, command), getSessionName: () => "Changing task title" });
-	const ctx = { mode: "tui", cwd: "/tmp/project", isIdle: () => true, ui: { notify() {} } };
-	handlers.get("ui_prompt_start")({ title: "Approve command?" }, ctx);
+		registerCommand: (key, command) => commands.set(key, command) });
+	const ctx = { mode: "tui", isIdle: () => true, ui: { notify() {} } };
+	return { handlers, commands, ctx, output };
+}
+
+function endRun(handlers, stopReason = "stop", content = "Finished tests", errorMessage) {
 	handlers.get("agent_start")();
-	handlers.get("agent_end")({ messages: [{ role: "assistant", content: "Finished tests", stopReason: "stop" }] });
+	handlers.get("agent_end")({ messages: [{ role: "assistant", content, stopReason, errorMessage }] });
+}
+
+test("summaries exclude thinking blocks and control characters and preserve Unicode", () => {
+	assert.equal(shortText("<thinking>private</thinking>\n**Done** [tests](url)\x1b;"), "Done tests ;");
+	assert.equal(shortText("😀😀😀😀", 3), "😀😀…");
+	assert.equal(contentText([{ type: "thinking", thinking: "private" }, { type: "text", text: "result" }]), "result");
+});
+
+test("desktop notifications keep a fixed Pi Agent title and put status in the body", async (t) => {
+	const { handlers, commands, ctx, output } = harness(t);
+	handlers.get("ui_prompt_start")({ title: "Approve command?" }, ctx);
+	endRun(handlers);
 	handlers.get("agent_settled")({}, ctx);
-	handlers.get("agent_end")({ messages: [{ role: "assistant", stopReason: "error", errorMessage: "Request failed" }] });
+	endRun(handlers, "error", "", "Request failed");
 	handlers.get("agent_settled")({}, ctx);
 	handlers.get("session_compact_failed")({ errorMessage: "Too large" }, ctx);
 	await commands.get("notify-test").handler("", ctx);
-	await new Promise((resolve) => setImmediate(resolve));
 	assert.deepEqual(output, [
 		"待确认 · Approve command?", "已完成 · Finished tests", "出错 · Request failed",
 		"压缩失败 · Too large", "Desktop notifications are working",
@@ -111,11 +54,9 @@ test("desktop notifications keep a fixed Pi Agent title and put status in the bo
 
 	output.length = 0;
 	for (const stopReason of ["stop", "aborted", "length", "error"]) {
-		handlers.get("agent_start")();
-		handlers.get("agent_end")({ messages: [{ role: "assistant", content: "长文本😀\n".repeat(80), stopReason, errorMessage: "失败😀".repeat(80) }] });
+		endRun(handlers, stopReason, "长文本😀\n".repeat(80), "失败😀".repeat(80));
 		handlers.get("agent_settled")({}, ctx);
 	}
-	await new Promise((resolve) => setImmediate(resolve));
 	assert.equal(output.length, 4);
 	for (const [index, message] of output.entries()) {
 		const body = message.slice("\x1b]777;notify;Pi Agent;".length, -1);
@@ -126,10 +67,46 @@ test("desktop notifications keep a fixed Pi Agent title and put status in the bo
 	}
 });
 
-test("WezTerm routing requires exactly one verified Herdr terminal", () => {
-	const panes = [{ tty_name: "/dev/ttys000" }, { tty_name: "/dev/ttys001" }];
-	assert.equal(selectHerdrTty(panes, "ttys000 herdr\n?? herdr"), "/dev/ttys000");
-	assert.equal(selectHerdrTty(panes, "ttys000 /Users/iu/.local/bin/herdr\nttys001 herdr"), undefined);
-	assert.equal(selectHerdrTty(panes, "ttys002 herdr"), undefined);
-	assert.equal(selectHerdrTty(panes, "ttys000 not-herdr"), undefined);
+test("Kitty notifications send OSC 99 title and body chunks and sanitize payloads", async (t) => {
+	const { handlers, commands, ctx, output } = harness(t, true);
+	await commands.get("notify-test").handler("", ctx);
+	handlers.get("ui_prompt_start")({ title: "Approve; command?\x1b\x07\n" }, ctx);
+	endRun(handlers);
+	handlers.get("agent_settled")({}, ctx);
+	assert.deepEqual(output, [
+		"Desktop notifications are working", "待确认 · Approve  command?", "已完成 · Finished tests",
+	].flatMap((body) => [
+		"\x1b]99;i=pi:d=0;Pi Agent\x1b\\",
+		`\x1b]99;i=pi:p=body;${body}\x1b\\`,
+	]));
+});
+
+test("notifications wait for settlement and discard transient retry errors", (t) => {
+	const { handlers, ctx, output } = harness(t, true);
+	endRun(handlers, "error", "", "Transient error");
+	assert.deepEqual(output, []);
+	endRun(handlers);
+	ctx.isIdle = () => false;
+	handlers.get("agent_settled")({}, ctx);
+	assert.deepEqual(output, []);
+	ctx.isIdle = () => true;
+	handlers.get("agent_settled")({}, ctx);
+	assert.equal(output.length, 2);
+	assert.ok(output[1].includes("已完成 · Finished tests"));
+	assert.ok(!output[1].includes("Transient error"));
+});
+
+test("non-TUI modes and cancelled compaction never emit terminal notifications", async (t) => {
+	const { handlers, commands, ctx, output } = harness(t, true);
+	for (const mode of ["rpc", "print", "json"]) {
+		ctx.mode = mode;
+		handlers.get("ui_prompt_start")({ title: "Question" }, ctx);
+		endRun(handlers);
+		handlers.get("agent_settled")({}, ctx);
+		handlers.get("session_compact_failed")({ errorMessage: "Too large" }, ctx);
+		await commands.get("notify-test").handler("", ctx);
+	}
+	ctx.mode = "tui";
+	handlers.get("session_compact_failed")({ aborted: true }, ctx);
+	assert.deepEqual(output, []);
 });
