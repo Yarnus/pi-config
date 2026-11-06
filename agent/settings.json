@@ -51,8 +51,7 @@
       "prompts": [],
       "themes": []
     },
-    "npm:pi-control-chrome@0.8.0",
-    "npm:@clapecho233/pi-smart-fold@0.2.3"
+    "npm:pi-control-chrome@0.8.0"
   ],
   "skills": [
     "!**/.agents/skills/**"

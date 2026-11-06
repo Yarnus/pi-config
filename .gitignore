@@ -17,6 +17,9 @@
 !/agent/extensions/plan-mode.ts
 !/agent/extensions/notify.ts
 !/agent/extensions/response-time.ts
+!/agent/extensions/tool-fold/
+!/agent/extensions/tool-fold/index.ts
+!/agent/extensions/tool-fold/support.ts
 !/agent/extensions/notify/
 !/agent/extensions/notify/support.ts
 !/agent/extensions/statusline/
@@ -31,6 +34,7 @@
 !/tests/chrono-413-recovery.test.mjs
 !/tests/notify.test.mjs
 !/tests/response-time.test.mjs
+!/tests/tool-fold.test.mjs
 !/tests/plan-mode.test.mjs
 !/tests/statusline.test.mjs
 !/tests/python-helpers.test.mjs

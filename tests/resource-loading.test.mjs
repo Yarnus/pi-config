@@ -33,7 +33,7 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	const { extensions, errors } = loader.getExtensions();
 	assert.deepEqual(errors, []);
 	const paths = extensions.map((extension) => relative(agentDir, extension.path));
-	for (const path of ["extensions/ask-user-question.ts", "extensions/chrono-413-recovery.ts", "extensions/plan-mode.ts", "extensions/notify.ts", "extensions/response-time.ts", "extensions/statusline/index.ts"]) {
+	for (const path of ["extensions/ask-user-question.ts", "extensions/chrono-413-recovery.ts", "extensions/plan-mode.ts", "extensions/notify.ts", "extensions/response-time.ts", "extensions/tool-fold/index.ts", "extensions/statusline/index.ts"]) {
 		assert.ok(paths.includes(path), `Missing extension: ${path}; loaded ${paths}`);
 	}
 	for (const source of settings.packages.filter((source) => typeof source === "string" && source.startsWith("npm:"))) {
@@ -45,7 +45,7 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	assert.ok(paths.every((path) => !/plan-todo|prompt-snippets|pi-plan-mode|pi-todo|pi-thinking-steps|packages\/my-pi/.test(path)));
 	const tools = extensions.flatMap((extension) => [...extension.tools.keys()]);
 	for (const name of ["ask_user_question", "web_search", "fetch_content", "todo"]) assert.ok(tools.includes(name), `Missing tool: ${name}`);
-	for (const name of ["subagents-doctor", "todos", "btw", "plan"]) assert.ok(extensions.some((extension) => extension.commands.has(name)), `Missing command: ${name}`);
+	for (const name of ["subagents-doctor", "todos", "btw", "plan", "tool-fold"]) assert.ok(extensions.some((extension) => extension.commands.has(name)), `Missing command: ${name}`);
 	assert.equal(new Set(tools).size, tools.length, "Duplicate tool registrations");
 	const { skills, diagnostics } = loader.getSkills();
 	assert.deepEqual(diagnostics.filter((entry) => entry.type === "collision"), []);
@@ -81,4 +81,31 @@ test("Pi discovers native resources, excludes shared skills, and resolves the de
 	assert.equal(agent.inheritGlobalContext, true);
 	assert.ok(agent.tools.includes("contact_supervisor"));
 	assert.ok(!agent.tools.includes("subagent"));
+
+	// Exercise the private-component adapter against the installed Pi, not only fakes.
+	const components = await import(pathToFileURL(join(piRoot, "dist/index.js")).href);
+	const { theme, initTheme } = await import(pathToFileURL(join(piRoot, "dist/modes/interactive/theme/theme.js")).href);
+	initTheme("dark", false);
+	const { installFolding } = await import("../agent/extensions/tool-fold/support.ts");
+	const nativeRender = components.ToolExecutionComponent.prototype.render;
+	const folding = installFolding(components, () => theme);
+	try {
+		const ui = { requestRender() {} };
+		const a = new components.ToolExecutionComponent("bash", "a", { command: "echo hello" }, {}, undefined, ui, home);
+		const b = new components.ToolExecutionComponent("read", "b", { path: "hello.txt" }, {}, undefined, ui, home);
+		for (const tool of [a, b]) tool.updateResult({ content: [{ type: "text", text: "hello" }], isError: false, durationMs: 100 });
+		a.render(80); b.render(80);
+		assert.doesNotMatch(a.render(80).join("\n"), /calls/);
+		assert.equal(b.render(80).length, 1);
+		a.handleMouse({ type: "click", button: "left", y: 0, height: 1 });
+		assert.equal(a.render(80).length, 2);
+		assert.equal(b.render(80).length, 1);
+		assert.match(a.render(80)[1], /│.*hello/);
+		// Each tool owns its expansion state.
+		a.handleMouse({ type: "click", button: "left", y: 0, height: 10 });
+		assert.equal(a.render(80).length, 1);
+	} finally {
+		folding.dispose();
+	}
+	assert.equal(components.ToolExecutionComponent.prototype.render, nativeRender);
 });
