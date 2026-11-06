@@ -99,7 +99,9 @@ function buildSnapshot(ctx: any, branch: string | null, thinkingLevel: string | 
 		cwd: ctx.cwd,
 		branch,
 		provider: typeof ctx.model?.provider === "string" ? ctx.model.provider : null,
-		model: typeof ctx.model?.id === "string" ? ctx.model.id : "no-model",
+		model: typeof ctx.model?.name === "string" && ctx.model.name.trim()
+			? ctx.model.name
+			: typeof ctx.model?.id === "string" ? ctx.model.id : "no-model",
 		thinkingLevel,
 		totalInput,
 		totalOutput,

@@ -1,120 +1,194 @@
 {
   "providers": {
-    "chrono": {
-      "baseUrl": "https://nyx.chrono-ai.fun/api/v1/proxy/s/chrono-llm-public",
-      "api": "openai-completions",
-      "apiKey": "$CHRONO_KEY",
+    "openai-api": {
+      "name": "OpenAI (API Key)",
+      "baseUrl": "https://api.openai.com/v1",
+      "api": "openai-responses",
+      "apiKey": "$OPENAI_API_KEY_2",
       "models": [
         {
-          "id": "gpt-5.5",
-          "name": "GPT-5.5",
-          "contextWindow": 160000,
-          "reasoning": true,
-          "cost": {
-            "input": 5,
-            "output": 30,
-            "cacheRead": 0.5,
-            "cacheWrite": 0,
-            "tiers": [
-              {
-                "inputTokensAbove": 272000,
-                "input": 10,
-                "output": 45,
-                "cacheRead": 1,
-                "cacheWrite": 0
-              }
-            ]
-          }
-        },
-        {
-          "id": "gpt-5.6",
-          "name": "GPT-5.6",
-          "contextWindow": 160000,
-          "reasoning": true
-        },
-        {
-          "id": "gpt-5.6-sol",
-          "name": "GPT-5.6 Sol",
-          "contextWindow": 160000,
+          "id": "gpt-6.1-sol",
+          "name": "GPT-6.1 Sol (API Key)",
           "reasoning": true,
           "input": ["text", "image"],
-          "cost": {
-            "input": 4,
-            "output": 20,
-            "cacheRead": 0.4,
-            "cacheWrite": 5,
-            "tiers": [
-              {
-                "inputTokensAbove": 272000,
-                "input": 8,
-                "output": 30,
-                "cacheRead": 0.8,
-                "cacheWrite": 10
-              }
-            ]
-          },
           "thinkingLevelMap": {
-            "xhigh": "xhigh"
-          }
-        },
-        {
-          "id": "gpt-5.6-terra",
-          "name": "GPT-5.6 Terra",
-          "contextWindow": 160000,
-          "reasoning": true,
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "xhigh",
+            "max": "max"
+          },
+          "contextWindow": 272000,
+          "maxTokens": 128000,
           "cost": {
             "input": 2,
-            "output": 12,
-            "cacheRead": 0.2,
+            "output": 10,
+            "cacheRead": 0.1,
             "cacheWrite": 2.5,
             "tiers": [
               {
                 "inputTokensAbove": 272000,
                 "input": 4,
-                "output": 18,
-                "cacheRead": 0.4,
+                "output": 15,
+                "cacheRead": 0.2,
                 "cacheWrite": 5
               }
             ]
-          }
-        },
-        {
-          "id": "gpt-5.6-luna",
-          "name": "GPT-5.6 Luna",
-          "contextWindow": 160000,
-          "reasoning": true,
-          "cost": {
-            "input": 0.2,
-            "output": 1.2,
-            "cacheRead": 0.02,
-            "cacheWrite": 0.25,
-            "tiers": [
-              {
-                "inputTokensAbove": 272000,
-                "input": 0.4,
-                "output": 1.8,
-                "cacheRead": 0.04,
-                "cacheWrite": 0.5
-              }
-            ]
           },
-          "thinkingLevelMap": {
-            "max": "max"
+          "compat": {
+            "supportsStrictMode": true,
+            "supportsOpenAIGrammarTools": true,
+            "supportsAdditionalTools": true,
+            "supportsToolSearch": true,
+            "supportsMidConvoSystemMessages": true,
+            "supportsExplicitPromptCacheMode": true,
+            "supportsMidConvoEffort": true
           }
+        }
+      ]
+    },
+    "antigravity": {
+      "name": "Antigravity (CLIProxyAPI)",
+      "baseUrl": "http://127.0.0.1:8317/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "claude-opus-5-5-high",
+          "name": "Claude Opus 5.5 (High)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 1000000,
+          "maxTokens": 128000
         },
         {
-          "id": "gpt-6",
-          "name": "GPT-6",
-          "contextWindow": 160000,
+          "id": "claude-sonnet-5-5-high",
+          "name": "Claude Sonnet 5.5 (High)",
           "reasoning": true,
-          "input": ["text", "image"]
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 1000000,
+          "maxTokens": 128000
         },
         {
-          "id": "gpt-6-astra",
-          "name": "GPT-6 Astra",
-          "contextWindow": 160000,
+          "id": "gemini-3.8-flash-high",
+          "name": "Gemini 3.8 Flash (High)",
           "reasoning": true,
-          "input": ["text", "image"]
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 1048576,
+          "maxTokens": 65536
+        },
+        {
+          "id": "gpt-oss-120b-medium",
+          "name": "GPT-OSS 120B (Medium)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text"],
+          "contextWindow": 114000,
+          "maxTokens": 32768
+        },
+        {
+          "id": "gemini-3.1-flash-lite",
+          "name": "Gemini 3.1 Flash Lite",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 1048576,
+          "maxTokens": 65535
+        },
+        {
+          "id": "gemini-4-argon-high",
+          "name": "Gemini 4 Argon (High)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 1048576,
+          "maxTokens": 1048576
+        },
+        {
+          "id": "gemini-3-flash",
+          "name": "Gemini 3 Flash",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 1048576,
+          "maxTokens": 65536
+        },
+        {
+          "id": "gemini-3.5-flash-lite",
+          "name": "Gemini 3.5 Flash Lite",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": null,
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 1048576,
+          "maxTokens": 65535
         }
       ]
     }

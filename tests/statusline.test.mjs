@@ -108,6 +108,42 @@ test("uses cool theme colors for location and keeps metrics subdued", () => {
 	footer.dispose();
 });
 
+test("footer prefers the model display name and falls back to its ID", () => {
+	const handlers = new Map();
+	let footer;
+	const ctx = {
+		mode: "tui",
+		cwd: snapshot.cwd,
+		model: { id: "claude-opus-5-5-high", name: "Claude Opus 5.5 (High)", provider: "antigravity" },
+		sessionManager: { getBranch: () => [] },
+		ui: {
+			setFooter(factory) {
+				footer = factory(
+					{ requestRender() {} },
+					{ fg: (_color, text) => text },
+					{ getGitBranch: () => null, onBranchChange: () => () => {} },
+				);
+			},
+		},
+	};
+	statuslineExtension({
+		on: (event, handler) => handlers.set(event, handler),
+		getThinkingLevel: () => "medium",
+	});
+	handlers.get("session_start")({}, ctx);
+	const [line] = footer.render(140);
+	assert.match(line, /● Claude Opus 5\.5 \(High\) antigravity/);
+	assert.match(line, /≋ medium/);
+	assert.doesNotMatch(line, /claude-opus-5-5-high/);
+	for (const name of [undefined, "", "   "]) {
+		ctx.model.name = name;
+		assert.match(footer.render(140)[0], /● claude-opus-5-5-high antigravity/);
+	}
+	ctx.model = undefined;
+	assert.match(footer.render(140)[0], /● no-model/);
+	footer.dispose();
+});
+
 test("renders a responsive two-line wide layout", () => {
 	const lines = render(140);
 	assert.equal(lines.length, 2);

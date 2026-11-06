@@ -8,7 +8,7 @@
     "imageWidthCells": 120
   },
   "packages": [
-    "npm:pi-subagents@0.75.0",
+    "npm:pi-subagents@0.84.0",
     "npm:pi-web-access@0.35.0",
     "npm:@juicesharp/rpiv-todo@2.12.0",
     "npm:@narumitw/pi-btw@0.59.0",
@@ -51,7 +51,8 @@
       "prompts": [],
       "themes": []
     },
-    "npm:pi-control-chrome@0.8.0"
+    "npm:pi-control-chrome@0.8.0",
+    "npm:@clapecho233/pi-smart-fold@0.2.3"
   ],
   "skills": [
     "!**/.agents/skills/**"
@@ -70,10 +71,19 @@
   },
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
-  "lastChangelogVersion": "1.4.0",
+  "lastChangelogVersion": "1.5.0",
   "enabledModels": [
     "openai-codex/gpt-6.1-sol",
     "openai-codex/gpt-6-luna",
-    "chrono/gpt-6-astra"
-  ]
+    "antigravity/gemini-4-argon-high",
+    "openai-api/gpt-6.1-sol",
+    "antigravity/gemini-3.8-flash-high"
+  ],
+  "extensionChangelogVersions": {
+    "{\"source\":\"npm:pi-subagents@0.75.0\",\"scope\":\"user\"}": "0.75.0",
+    "{\"source\":\"npm:pi-web-access@0.35.0\",\"scope\":\"user\"}": "0.35.0",
+    "{\"source\":\"npm:pi-elixir@0.8.5\",\"scope\":\"user\"}": "0.8.5",
+    "{\"source\":\"npm:pi-control-chrome@0.8.0\",\"scope\":\"user\"}": "0.8.0",
+    "{\"source\":\"npm:pi-subagents@0.84.0\",\"scope\":\"user\"}": "0.84.0"
+  }
 }
